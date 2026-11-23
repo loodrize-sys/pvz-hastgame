@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Сборка заказа</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: var(--tg-theme-bg-color, #17212b);
+            --text: var(--tg-theme-text-color, #ffffff);
+            --hint: var(--tg-theme-hint-color, #708499);
+            --btn: var(--tg-theme-button-color, #2ea6ff);
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --secondary: var(--tg-theme-secondary-bg-color, #232e3c);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .header {
+            padding: 15px 20px;
+            background: var(--secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+
+        .order-panel {
+            background: var(--secondary);
+            margin: 15px;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .order-panel h2 { margin: 0 0 10px 0; font-size: 16px; color: var(--hint); }
+        .order-items { font-size: 40px; display: flex; justify-content: center; gap: 15px; }
+
+        .warehouse {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 15px 15px 15px;
+            overflow-y: auto;
+            align-content: start;
+            padding-bottom: 100px; /* Отступ, чтобы кнопка не перекрывала нижний ряд */
+        }
+
+        .item {
+            background: var(--secondary);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            aspect-ratio: 1;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .item:active { transform: scale(0.9); }
+        .item.selected {
+            border-color: #34c759;
+            background: rgba(52, 199, 89, 0.2);
+            transform: scale(0.95);
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: var(--bg);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            border: none;
+            border-radius: 14px;
+            background-color: var(--btn);
+            color: var(--btn-text);
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+        }
+        .overlay h1 { font-size: 28px; margin-bottom: 10px; }
+        .overlay p { font-size: 16px; color: var(--hint); margin-bottom: 30px; line-height: 1.5; }
+        .overlay button { max-width: 300px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Экран старта -->
+    <div id="start-screen" class="overlay">
+        <h1>📦 Сборка заказов</h1>
+        <p>Клиенты делают заказы.<br>Найди нужные товары на складе, нажми на них и упакуй посылку!<br><br>У тебя есть 30 секунд.</p>
+        <button id="start-btn">Начать смену</button>
+    </div>
+
+    <!-- Игра -->
+    <div id="game-screen" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+        <div class="header">
+            <span>⏱ <span id="timer">30</span></span>
+            <span>💰 <span id="score">0</span></span>
+        </div>
+
+        <div class="order-panel">
+            <h2>Заказ клиента:</h2>
+            <div class="order-items" id="order-items">📦</div>
+        </div>
+
+        <div class="warehouse" id="warehouse"></div>
+
+        <div class="footer">
+            <button id="pack-btn">Упаковать заказ</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        const ALL_ITEMS = ['🧸', '🍫', '🎧', '📱', '👕', '👟', '📚', '🧴', '☕', '🍪', '🎮', '💍'];
+        
+        let score = 0;
+        let timeLeft = 30;
+        let isPlaying = false;
+        let currentOrder = [];
+        let selectedItems = [];
+        let gameInterval;
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const orderItemsEl = document.getElementById('order-items');
+        const warehouseEl = document.getElementById('warehouse');
+        const packBtn = document.getElementById('pack-btn');
+        const timerEl = document.getElementById('timer');
+        const scoreEl = document.getElementById('score');
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function generateOrder() {
+            selectedItems = [];
+            packBtn.style.backgroundColor = 'var(--btn)';
+            packBtn.innerText = 'Упаковать заказ';
+            
+            const orderSize = Math.random() > 0.5 ? 2 : 3;
+            const shuffledItems = shuffle([...ALL_ITEMS]);
+            currentOrder = shuffledItems.slice(0, orderSize);
+
+            orderItemsEl.innerHTML = currentOrder.join(' ');
+
+            const warehouseItems = [...currentOrder];
+            while (warehouseItems.length < 9) {
+                const randomItem = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
+                if (warehouseItems.filter(i => i === randomItem).length < 3) {
+                    warehouseItems.push(randomItem);
+                }
+            }
+
+            warehouseEl.innerHTML = '';
+            shuffle(warehouseItems).forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'item';
+                el.innerText = item;
+                el.dataset.item = item;
+                
+                el.onclick = () => toggleItem(el, item);
+                warehouseEl.appendChild(el);
+            });
+        }
+
+        function toggleItem(el, item) {
+            if (!isPlaying) return;
+            
+            const index = selectedItems.indexOf(item);
+            if (index > -1) {
+                selectedItems.splice(index, 1);
+                el.classList.remove('selected');
+            } else {
+                const neededCount = currentOrder.filter(i => i === item).length;
+                const selectedCount = selectedItems.filter(i => i === item).length;
+                
+                if (selectedCount < neededCount) {
+                    selectedItems.push(item);
+                    el.classList.add('selected');
+                } else {
+                    el.style.borderColor = '#ff3b30';
+                    setTimeout(() => el.style.borderColor = 'transparent', 300);
+                }
+            }
+        }
+
+        packBtn.onclick = () => {
+            if (!isPlaying) return;
+            
+            const sortedOrder = [...currentOrder].sort();
+            const sortedSelected = [...selectedItems].sort();
+            
+            if (JSON.stringify(sortedOrder) === JSON.stringify(sortedSelected)) {
+                score += 10;
+                scoreEl.innerText = score;
+                
+                packBtn.innerText = '✅ Упаковано!';
+                packBtn.style.backgroundColor = '#34c759';
+                
+                setTimeout(() => {
+                    generateOrder();
+                }, 500);
+            } else {
+                packBtn.innerText = '❌ Не все предметы!';
+                packBtn.style.backgroundColor = '#ff3b30';
+                
+                setTimeout(() => {
+                    packBtn.innerText = 'Упаковать заказ';
+                    packBtn.style.backgroundColor = 'var(--btn)';
+                }, 1000);
+            }
+        };
+
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            isPlaying = true;
+            scoreEl.innerText = score;
+            timerEl.innerText = timeLeft;
+            
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            generateOrder();
+
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(gameInterval);
+            
+            gameScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            startScreen.innerHTML = `
+                <h1>Смена окончена!</h1>
+                <p>Ты собрал заказов на <b>${score} монет</b>.</p>
+                <button id="finish-btn">Забрать монеты</button>
+            `;
+
+            document.getElementById('finish-btn').onclick = () => {
+                tg.sendData(JSON.stringify({ earned_coins: score }));
+                tg.close();
+            };
+        }
+
+        document.getElementById('start-btn').onclick = startGame;
+    </script>
+</body>
+</html>
