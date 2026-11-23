@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Магазины TamaLife</title>
+    <title>Витрина TamaLife</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -24,7 +24,7 @@
         .shop-item { background: var(--secondary); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         
         .shop-header { display: flex; align-items: center; padding: 18px; cursor: pointer; }
-        .shop-icon { width: 60px; height: 60px; margin-right: 15px; border-radius: 16px; background: rgba(255,255,255,0.05); overflow: hidden; }
+        .shop-icon { width: 60px; height: 60px; margin-right: 15px; border-radius: 16px; background: rgba(255,255,255,0.05); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 30px; }
         .shop-icon img { width: 100%; height: 100%; object-fit: contain; }
         .shop-info h3 { margin: 0 0 4px 0; font-size: 18px; font-weight: 800; }
         
@@ -38,10 +38,9 @@
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .card { background: var(--secondary); border-radius: 20px; padding: 15px; text-align: center; }
-        .card img { width: 80px; height: 80px; object-fit: contain; }
-        .card h3 { margin: 10px 0 5px; font-size: 16px; }
-        .price { font-weight: bold; color: #ffd700; margin-bottom: 10px; font-size: 18px; }
-        .buy-btn { width: 100%; padding: 12px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 14px; }
+        .card img { width: 80px; height: 80px; object-fit: contain; margin: 0 auto 10px; display: block; }
+        .card h3 { margin: 0 0 5px; font-size: 16px; }
+        .price { font-weight: bold; color: #ffd700; margin-bottom: 5px; font-size: 18px; }
 
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: var(--bg); }
         .close-btn { width: 100%; padding: 16px; border: none; border-radius: 14px; background: #ff3b30; color: white; font-weight: bold; font-size: 16px; }
@@ -67,7 +66,7 @@
     </div>
 
     <div class="footer">
-        <button class="close-btn" onclick="tg.close()">Закрыть</button>
+        <button class="close-btn" onclick="tg.close()">Закрыть витрину</button>
     </div>
 
     <script>
@@ -81,61 +80,42 @@
 
         const IMG = "https://loodrize-sys.github.io/pvz-hastgame/img/";
 
-        // ВСЕ 6 МАГАЗИНОВ
         const SHOPS = {
-            "tamaking": {
-                name: "TamaKing", color: "#FF5722", img: IMG + "logo_tamaking.png",
-                items: [
-                    { id: 'burger', name: 'Бургер', price: 25, img: IMG + "burger.png" },
-                    { id: 'fries', name: 'Картошка', price: 15, img: IMG + "fries.png" },
-                    { id: 'cola', name: 'Кола', price: 10, img: IMG + "cola.png" },
-                    { id: 'nuggets', name: 'Наггетсы', price: 20, img: IMG + "nuggets.png" }
-                ]
-            },
-            "tamakea": {
-                name: "TamaKea", color: "#2196F3", img: IMG + "logo_tamakea.png",
-                items: [
-                    { id: 'bed', name: 'Кровать', price: 100, img: IMG + "bed.png" },
-                    { id: 'chair', name: 'Кресло', price: 50, img: IMG + "armchair.png" },
-                    { id: 'wardrobe', name: 'Шкаф', price: 80, img: IMG + "wardrobe.png" },
-                    { id: 'lamp', name: 'Лампа', price: 30, img: IMG + "lamp.png" }
-                ]
-            },
-            "tamamart": {
-                name: "TamaMart", color: "#4CAF50", img: IMG + "logo_tamamart.png",
-                items: [
-                    { id: 'apple', name: 'Яблоко', price: 10, img: IMG + "apple.png" },
-                    { id: 'milk', name: 'Молоко', price: 15, img: IMG + "milk.png" },
-                    { id: 'bread', name: 'Хлеб', price: 8, img: IMG + "bread.png" },
-                    { id: 'cheese', name: 'Сыр', price: 20, img: IMG + "cheese.png" }
-                ]
-            },
-            "tamabrew": {
-                name: "TamaBrew", color: "#795548", img: IMG + "logo_tamabrew.png",
-                items: [
-                    { id: 'juice', name: 'Сок', price: 15, img: IMG + "juice.png" },
-                    { id: 'peanuts', name: 'Орешки', price: 10, img: IMG + "peanuts.png" },
-                    { id: 'smoothie', name: 'Смузи', price: 25, img: IMG + "smoothie.png" }
-                ]
-            },
-            "tamapharm": {
-                name: "TamaPharm", color: "#9C27B0", img: IMG + "logo_tamapharm.png",
-                items: [
-                    { id: 'pill', name: 'Таблетка', price: 30, img: IMG + "pill.png" },
-                    { id: 'bandage', name: 'Бинт', price: 20, img: IMG + "bandage.png" },
-                    { id: 'syrup', name: 'Сироп', price: 50, img: IMG + "syrup.png" },
-                    { id: 'vitamins', name: 'Витамины', price: 40, img: IMG + "vitamins.png" }
-                ]
-            },
-            "tamacake": {
-                name: "TamaCake", color: "#E91E63", img: IMG + "logo_tamacake.png",
-                items: [
-                    { id: 'cake', name: 'Тортик', price: 25, img: IMG + "cake.png" },
-                    { id: 'cupcake', name: 'Кекс', price: 15, img: IMG + "cupcake.png" },
-                    { id: 'donut', name: 'Пончик', price: 20, img: IMG + "donut.png" },
-                    { id: 'cookie', name: 'Печенье', price: 12, img: IMG + "cookie.png" }
-                ]
-            }
+            "tamaking": { name: "TamaKing", color: "#FF5722", img: IMG + "logo_tamaking.png", items: [
+                { id: 'burger', name: 'Бургер', price: 25, img: IMG + "burger.png" },
+                { id: 'fries', name: 'Картошка', price: 15, img: IMG + "fries.png" },
+                { id: 'cola', name: 'Кола', price: 10, img: IMG + "cola.png" },
+                { id: 'nuggets', name: 'Наггетсы', price: 20, img: IMG + "nuggets.png" }
+            ]},
+            "tamakea": { name: "TamaKea", color: "#2196F3", img: IMG + "logo_tamakea.png", items: [
+                { id: 'bed', name: 'Кровать', price: 100, img: IMG + "bed.png" },
+                { id: 'chair', name: 'Кресло', price: 50, img: IMG + "armchair.png" },
+                { id: 'wardrobe', name: 'Шкаф', price: 80, img: IMG + "wardrobe.png" },
+                { id: 'lamp', name: 'Лампа', price: 30, img: IMG + "lamp.png" }
+            ]},
+            "tamamart": { name: "TamaMart", color: "#4CAF50", img: IMG + "logo_tamamart.png", items: [
+                { id: 'apple', name: 'Яблоко', price: 10, img: IMG + "apple.png" },
+                { id: 'milk', name: 'Молоко', price: 15, img: IMG + "milk.png" },
+                { id: 'bread', name: 'Хлеб', price: 8, img: IMG + "bread.png" },
+                { id: 'cheese', name: 'Сыр', price: 20, img: IMG + "cheese.png" }
+            ]},
+            "tamabrew": { name: "TamaBrew", color: "#795548", img: IMG + "logo_tamabrew.png", items: [
+                { id: 'juice', name: 'Сок', price: 15, img: IMG + "juice.png" },
+                { id: 'peanuts', name: 'Орешки', price: 10, img: IMG + "peanuts.png" },
+                { id: 'smoothie', name: 'Смузи', price: 25, img: IMG + "smoothie.png" }
+            ]},
+            "tamapharm": { name: "TamaPharm", color: "#9C27B0", img: IMG + "logo_tamapharm.png", items: [
+                { id: 'pill', name: 'Таблетка', price: 30, img: IMG + "pill.png" },
+                { id: 'bandage', name: 'Бинт', price: 20, img: IMG + "bandage.png" },
+                { id: 'syrup', name: 'Сироп', price: 50, img: IMG + "syrup.png" },
+                { id: 'vitamins', name: 'Витамины', price: 40, img: IMG + "vitamins.png" }
+            ]},
+            "tamacake": { name: "TamaCake", color: "#E91E63", img: IMG + "logo_tamacake.png", items: [
+                { id: 'cake', name: 'Тортик', price: 25, img: IMG + "cake.png" },
+                { id: 'cupcake', name: 'Кекс', price: 15, img: IMG + "cupcake.png" },
+                { id: 'donut', name: 'Пончик', price: 20, img: IMG + "donut.png" },
+                { id: 'cookie', name: 'Печенье', price: 12, img: IMG + "cookie.png" }
+            ]}
         };
 
         const shopList = document.getElementById('shop-list');
@@ -143,13 +123,14 @@
         for (const [key, shop] of Object.entries(SHOPS)) {
             const div = document.createElement('div');
             div.className = 'shop-item';
+            // Если картинка не загрузится, покажется эмодзи из alt
             div.innerHTML = `
                 <div class="shop-header" onclick="toggleShop('${key}')">
-                    <div class="shop-icon"><img src="${shop.img}"></div>
+                    <div class="shop-icon"><img src="${shop.img}" alt="🏪"></div>
                     <div class="shop-info"><h3 style="color:${shop.color}">${shop.name}</h3></div>
                 </div>
                 <div class="enter-btn-container" id="btn-${key}">
-                    <button class="enter-btn" style="background:${shop.color}" onclick="enterShop(event, '${key}')">Войти →</button>
+                    <button class="enter-btn" style="background:${shop.color}" onclick="enterShop(event, '${key}')">Посмотреть товары →</button>
                 </div>
             `;
             shopList.appendChild(div);
@@ -173,10 +154,9 @@
             shop.items.forEach(item => {
                 grid.innerHTML += `
                     <div class="card">
-                        <img src="${item.img}">
+                        <img src="${item.img}" alt="📦">
                         <h3>${item.name}</h3>
                         <div class="price">🪙 ${item.price}</div>
-                        <button class="buy-btn" style="background:${shop.color}" onclick="buy('${item.id}', ${item.price})">Купить</button>
                     </div>
                 `;
             });
@@ -185,15 +165,6 @@
         function closeShop() {
             document.getElementById('shop-screen').classList.remove('active');
             document.getElementById('main-screen').classList.remove('hidden');
-        }
-
-        function buy(id, price) {
-    // Просто отправляем тестовый текст
-    tg.sendData(JSON.stringify({ test: "Привет, бот! Это тест." }));
-    
-    // Закрываем окно, чтобы бот точно получил сообщение
-    tg.close();
-        }
         }
     </script>
 </body>
