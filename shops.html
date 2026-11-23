@@ -188,11 +188,12 @@
         }
 
         function buy(id, price) {
-            if (currentCoins < price) { tg.showAlert("Мало монет!"); return; }
-            tg.sendData(JSON.stringify({ action: "buy_item", item_id: id, price: price }));
-            currentCoins -= price;
-            document.getElementById('coins-main').innerText = currentCoins;
-            tg.showAlert(`Куплено! Остаток: ${currentCoins}`, () => { tg.close(); });
+    // Просто отправляем тестовый текст
+    tg.sendData(JSON.stringify({ test: "Привет, бот! Это тест." }));
+    
+    // Закрываем окно, чтобы бот точно получил сообщение
+    tg.close();
+        }
         }
     </script>
 </body>
